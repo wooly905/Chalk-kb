@@ -1,0 +1,6 @@
+method,task,human_minutes,machine_wait_minutes
+manual,素材整理,120,0
+manual,投影片與講稿撰寫,240,0
+tool,來源清單與操作,10,25
+tool,審核 brief 與處理先備/缺漏,40,0
+tool,逐張審核與修正,90,15

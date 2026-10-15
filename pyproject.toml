@@ -1,0 +1,8 @@
+[project]
+name = "course-kb"
+version = "0.1.0"
+description = "Turn teaching materials into a traceable course knowledge base and per-slide plans with speaker scripts."
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

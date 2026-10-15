@@ -1,0 +1,10 @@
+# Per-slide human review. Copy workspace/reports/review.template.yaml (written by `accept`) and fill it in.
+# content_hash binds the review to the exact slide content and approval; if the slide, Brief or cards
+# change, the hash changes and the slide must be reviewed again.
+ch01-s01:
+  content_hash: "<from reports/review.template.yaml>"
+  faithful_to_evidence: true
+  explains_point: true
+  fits_objective: true
+  reviewer: 王老師
+  notes: ""

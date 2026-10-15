@@ -1,0 +1,15 @@
+# Copy to sources.yaml and edit. Every id must be unique; it appears in all output files and citations.
+sources:
+  - id: notes-01
+    type: text                # web | text | subtitle | media | youtube
+    location: ./materials/notes01.md
+    license: own
+  - id: article-01
+    type: web
+    location: https://example.com/gradient-descent
+    license: unknown
+  - id: lecture-01-subs
+    type: subtitle
+    location: ./materials/lecture01.srt
+    license: own
+    language: zh

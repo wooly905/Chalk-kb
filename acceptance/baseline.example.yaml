@@ -1,0 +1,22 @@
+# Fixed baseline for acceptance (spec chapter 15). Keep it versioned with the materials it describes.
+name: 機器學習導論：最佳化（文字教材 v1）
+audience: 大學二年級，已修過微積分
+objectives:
+  - 說明梯度下降的更新規則
+# normalized/{id}.json source_version of the exact material versions that were labelled
+source_versions:
+  notes-01: "<source_version>"
+required_concepts:
+  - name: 梯度下降
+    aliases: [gradient descent]
+  - name: 偏微分
+    allow_exclusion: true   # the audience already knows it; exclusion with a reason is acceptable
+formulas:
+  - concept: 梯度下降
+    latex: '\theta \leftarrow \theta - \eta \nabla L'
+values:
+  - concept: 梯度下降
+    text: "0.1"
+known_conflicts:
+  - concept: 梯度下降
+    mentions: ["0.1", "0.01"]
