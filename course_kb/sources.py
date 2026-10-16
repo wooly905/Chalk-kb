@@ -14,6 +14,20 @@ class SourceError(ValueError):
     pass
 
 
+def load_course(path: Path) -> dict:
+    """Optional top-level 'course' block: title, audience, objectives (string or list)."""
+    with open(Path(path), "r", encoding="utf-8") as f:
+        doc = yaml.safe_load(f) or {}
+    course = doc.get("course") or {}
+    if not isinstance(course, dict):
+        raise SourceError(f"{path}: 'course' must be a mapping")
+    objectives = course.get("objectives")
+    if isinstance(objectives, str):
+        objectives = [objectives]
+    return {"title": course.get("title"), "audience": course.get("audience"),
+            "objectives": [str(o) for o in objectives] if objectives else None}
+
+
 def load_sources(path: Path) -> list[dict]:
     path = Path(path)
     with open(path, "r", encoding="utf-8") as f:

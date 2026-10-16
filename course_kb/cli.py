@@ -66,6 +66,17 @@ def _parser() -> argparse.ArgumentParser:
     s = sub.add_parser("slides", help="generate per-slide plans and speaker scripts")
     s.add_argument("--force", action="store_true")
 
+    x = sub.add_parser("export-pptx", help="export slides.json to a .pptx deck")
+    x.add_argument("--out", help="output path (default ./slides.pptx in the current directory)")
+
+    bd = sub.add_parser("build", help="one command: run → auto-approve → slides → pptx")
+    bd.add_argument("sources")
+    bd.add_argument("--force", action="store_true", help="re-run generation stages ignoring cache")
+    bd.add_argument("--stop-before-approve", action="store_true",
+                    help="stop after the Course Brief for manual review")
+    bd.add_argument("--out", help="pptx output path (default ./slides.pptx in the current directory)")
+    plan_args(bd)
+
     a = sub.add_parser("accept", help="check outputs against a fixed baseline (chapter 15)")
     a.add_argument("baseline", help="baseline YAML (see acceptance/baseline.example.yaml)")
     a.add_argument("--review", help="per-slide human review YAML")
@@ -98,22 +109,41 @@ def main(argv=None) -> int:
         for noisy in ("httpx", "openai", "sentence_transformers"):
             logging.getLogger(noisy).setLevel(logging.WARNING)
     ctx = build_context(args.workspace)
-    from .brief import BriefError, approve, render, run_brief
+    from .brief import BriefError, approve, auto_resolve, render, run_brief
     from .cards import run_cards
     from .chunk import run_chunk
     from .ingest import run_ingest
     from .llm import FatalLLMError
     from .slides import run_slides
-    from .sources import SourceError
+    from .sources import SourceError, load_course
 
     try:
         cmd = args.command
-        if cmd == "run":
-            statuses = [run_ingest(ctx, Path(args.sources), args.only, args.force),
+        if cmd in ("run", "build"):
+            course = load_course(Path(args.sources))
+            title = args.title if args.title is not None else course["title"]
+            audience = args.audience if args.audience is not None else course["audience"]
+            objectives = args.objectives if args.objectives is not None else course["objectives"]
+            statuses = [run_ingest(ctx, Path(args.sources), getattr(args, "only", None), args.force),
                         run_chunk(ctx), run_cards(ctx, args.force)]
-            code = _report_brief(run_brief(ctx, args.title, args.audience, args.objectives, args.force))
-            log.info("Course Brief ready for review: %s", ctx.ws.brief_md)
-            return max(code, EXIT_PARTIAL if "partial" in statuses else EXIT_OK)
+            code = _report_brief(run_brief(ctx, title, audience, objectives, args.force))
+            code = max(code, EXIT_PARTIAL if "partial" in statuses else EXIT_OK)
+            if cmd == "run" or args.stop_before_approve:
+                log.info("Course Brief ready for review: %s", ctx.ws.brief_md)
+                return code
+            added = auto_resolve(ctx)
+            if added:
+                log.warning("build: %d review item(s) decided automatically without human review "
+                            "(listed in the pptx quality report)", len(added))
+            approve(ctx)
+            doc = run_slides(ctx, args.force)
+            from .pptx_export import export_pptx
+            export_pptx(ctx, Path(args.out) if args.out else None)
+            return EXIT_OK if doc["status"] == "complete" else EXIT_PARTIAL
+        if cmd == "export-pptx":
+            from .pptx_export import export_pptx
+            export_pptx(ctx, Path(args.out) if args.out else None)
+            return EXIT_OK
         if cmd == "ingest":
             return EXIT_OK if run_ingest(ctx, Path(args.sources), args.only, args.force) == "complete" else EXIT_PARTIAL
         if cmd == "chunk":

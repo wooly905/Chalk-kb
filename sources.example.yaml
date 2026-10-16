@@ -1,15 +1,59 @@
-# Copy to sources.yaml and edit. Every id must be unique; it appears in all output files and citations.
+# 範例：複製成 sources.yaml 後，把下面的假資料換成你自己的素材。
+
+# ── 課程資訊（選填）────────────────────────────────────────────
+# 命令列 --title / --audience / --objective 會覆寫這裡的值。
+course:
+  title: 機器學習導論：最佳化                # 投影片封面的課程名稱
+  audience: 大學二年級，已修過微積分          # 受眾越具體，先備知識判斷越準
+  objectives:                               # 一行一個學習目標；只有一個也可以寫成字串
+    - 說明梯度下降的更新規則
+    - 比較不同學習率對收斂的影響
+
+# ── 素材清單（必填，至少一筆）─────────────────────────────────
+# 每筆必填：id、type、location
+#   id       唯一代號，只能用英數字與 - _ .；會出現在投影片的來源引用中
+#   type     text | web | subtitle | media | youtube
+#   location 本機路徑或網址
+# 每筆選填：title、license（預設 unknown）、language、clean（預設 true）
 sources:
-  - id: notes-01
-    type: text                # web | text | subtitle | media | youtube
-    location: ./materials/notes01.md
+
+  # 1) 自己寫的筆記或講義：.md / .txt
+  - id: notes-gd
+    type: text
+    title: 梯度下降課堂筆記
+    location: ./materials/gradient-descent-notes.md
     license: own
-  - id: article-01
+
+  # 2) 網頁文章：會自動抽出正文
+  - id: blog-lr
     type: web
-    location: https://example.com/gradient-descent
-    license: unknown
-  - id: lecture-01-subs
+    title: 學習率怎麼選
+    location: https://example.com/blog/choosing-learning-rate
+    license: CC-BY-4.0
+
+  # 3) 本機字幕檔：.srt / .vtt
+  - id: lecture-03-subs
     type: subtitle
-    location: ./materials/lecture01.srt
+    title: 第三週錄影字幕
+    location: ./materials/week03-lecture.srt
     license: own
     language: zh
+    auto_captions: true       # 這份字幕是自動產生的 → 會先用模型校對（clean: true 時）
+
+  # 4) 本機影音檔：.mp4 / .mp3 等，沒有字幕時以 Whisper 轉錄（需要 ffmpeg）
+  - id: lecture-04-video
+    type: media
+    title: 第四週錄影
+    location: ./materials/week04-lecture.mp4
+    license: own
+    language: zh
+    keyframes: true           # 擷取畫面（板書、投影片）放進投影片；僅 media / youtube 可用
+
+  # 5) YouTube 影片：依序使用人工字幕 → 自動字幕 → Whisper
+  - id: yt-sgd-intro
+    type: youtube
+    title: SGD 入門講解
+    location: https://www.youtube.com/watch?v=XXXXXXXXXXX
+    license: unknown
+    rights_confirmed: true    # YouTube 必填 true：確認你有權使用這部影片，否則不會下載
+    keyframes: true

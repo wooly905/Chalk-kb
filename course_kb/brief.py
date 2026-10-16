@@ -333,6 +333,38 @@ def approve(ctx: Context) -> dict:
     return approval
 
 
+AUTO_REASON = "build 自動決定，未經人工審核"
+
+
+def auto_resolve(ctx: Context) -> list[dict]:
+    """Record a default decision for every open review item so 'build' can approve unattended.
+    Decisions are tagged with AUTO_REASON and reported in the pptx quality report."""
+    store = ctx.stages()
+    added: list[dict] = []
+    for _ in range(3):  # removing cycle edges can expose new auto-removed edges
+        brief, _, _, _, order = _current(ctx)
+        have = {d.get("item_id") for d in brief.get("review_decisions", [])}
+        new = [{"item_id": u["item_id"], "decision": "audience_has",
+                "reason": f"{AUTO_REASON}：假設受眾已具備「{u['prerequisite']}」"}
+               for u in order["unresolved_prerequisites"] if u["item_id"] not in have]
+        new += [{"item_id": e["item_id"], "decision": "remove_edge",
+                 "reason": f"{AUTO_REASON}：移除先備循環邊"}
+                for e in order["removed_edges"] if e["item_id"] not in have]
+        new += [{"item_id": f["item_id"], "decision": "accept_missing",
+                 "reason": f"{AUTO_REASON}：接受缺漏 {f['stage']} / {f['unit']}（{f['reason']}）"}
+                for f in ctx.report().failures() if f["item_id"] not in have]
+        if not new:
+            break
+        rec = store.get("brief", "plan")
+        untouched = rec is not None and hash_obj(brief) == rec.get("brief_hash")
+        brief["review_decisions"] = [*brief.get("review_decisions", []), *new]
+        write_json(ctx.ws.brief_json, brief)
+        if untouched:  # keep auto decisions from being treated as manual edits on the next run
+            store.put("brief", "plan", {**rec, "brief_hash": hash_obj(brief)})
+        added += new
+    return added
+
+
 def verify_approval(ctx: Context) -> dict:
     """Called before any slide request. Raises BriefError if anything drifted."""
     approval = read_json(ctx.ws.approval_file)
